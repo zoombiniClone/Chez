@@ -1,7 +1,7 @@
 # Chez
 Guess their menu
 
-[] : menu type name
+[] : menu name
 () : food name
 
 
@@ -9,9 +9,9 @@ Guess their menu
 2. Nobody wants (), or ().
 3. My neighbors both want the same [].
 4. Everbody else wants ().
-5. I'm the only one who wants. 
+5. I'm the only one who wants (). 
 
-6. Everybody over there wants. (left or right)
+6. Everybody over there wants (). (left or right)
 7. The only one whe wants () is over there. (left or right)
 8. One of my neighbors and I want ().
 9. The person who wants () is not sitting next to the one who wants ().
