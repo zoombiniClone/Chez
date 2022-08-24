@@ -17,7 +17,7 @@ n..m : number range
 관계를 나타내는 규칙들도 따로 명시해주시면 될 것 같아요 => relation
 이런 규칙들이 set 특징을 가지지 않는 모든 규칙인지 확인해봐야 할 것 같아요
 
-# 관계가 정의하기 되게 애매하네요 [위치적 관계(ex. 이웃, left/right, edge), 메뉴적 관계(ex. a를 시킨 사람은 b를 시키지 않았다)]
+**관계가 정의하기 되게 애매하네요 [위치적 관계(ex. 이웃, left/right, edge), 메뉴적 관계(ex. a를 시킨 사람은 b를 시키지 않았다)]
     1. 이웃이 ()를 원한다
     2. (a)를 시킨 사람은 (b)를 시킨 사람 옆에 있다
     3. (a)를 시킨 사람은 다른 []를 원한다 / [A(a)]를 시킨 사람은 동일한 [B(b)]를 원한다. 그리고 [C(c)]를 원하지 않는다
@@ -69,10 +69,10 @@ n..m : number range
 
 # 규칙들에서 찾아볼 수 있는 공통된 규칙들 목록
 
-1. I want ()
-2. I don't want ()
+1. I want ()  # set
+2. I don't want ()  # set
 <!-- I'm the only one who wants a () = 1, 3 -->
-3. Everybody else wants ()
+3. Everybody else wants ()  # set
 4. 1..2 of my neighbors want ()
 5. Everybody over left wants ()
 
@@ -116,17 +116,22 @@ n..m : number range
 - I
 - Everybody
 - Everybody else
-- Neighbors
+- Neighbors 
 - Everybody over left
 - Everybody over right
 - The two person sitting at each edge of the table
 
-- All the ones who want ()
+1-1. target condition
+
+
+<!-- - All the ones who want () -->
 
 2. setting spetific
 
     1. every
     - want ()
     - don't want ()
-    
+    - wants the same []
+    - don't wants the same []
+
     2. 
