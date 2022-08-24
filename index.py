@@ -22,10 +22,66 @@ class Dessert(Enum):
     Icecream = 2
     Fruitpie = 3
 
-class Game():
-    def __init__(self):
-        count = 6
-        people = [Person() for i in range(count)]
+# - I : 0
+# - Everybody
+# - Everybody else
+# - Neighbors 
+# - Everybody over left
+# - Everybody over right
+# - The two person sitting at each edge of the table
+class Target:
+    def __init__(self, game, me, target_type = random.randint(0, 7)):
+        self.game = game
+        self.me_index = me
+        self.count = game.count
+        self.target_type = target_type
+    
+    def get_target_index_list(self):
+        match self.target_type:
+            case 0:   # I
+                return [self.me_index]
+            case 1:   # everybody
+                return [i for i in range(self.count)]
+            case 2:   # everybody else
+                return [i for i in range(self.count)].remove(self.me_index)
+            case 3:   # neighbors
+                if self.me_index == 0 or self.me_index == self.count - 1:
+                    raise "Neighbors target_type don't have edge me_index"
+                return [self.me_index - 1, self.me_index + 1]
+            case 4:   # left
+                return [i for i in range(self.me_index - 1)]
+            case 5:   # right
+                return [i + self.me_index for i in range(self.count - self.me_index)]
+            case 6:   # edge
+                return [0, self.count - 1]
+
+
+class Rule:
+    def __init__(self, game, target, rule_type = 0):
+        self.game = game
+        self.target = target
+        self.rule_type = rule_type
+        # todo : dont overlap menu 
+        self.menu = random.choice(random.choice([list(Drink), list(Dish), list(Dessert)]))
+        # self.menu = [game.people[i] for i in target.get_target_index_list()]
+    
+    def set_menu_list(self):
+        people = self.game.people
+        match self.rule_type:
+            case 0: # want
+                for index in self.target.get_target_index_list():
+                    people[index].set_like([self.menu])
+                return True
+            case 1: # don't want
+                for index in self.target.get_target_index_list():
+                    people[index].set_dislike([self.menu])
+                return True
+
+
+
+
+
+
 
 # class Rule(Enum):
 #     I_dont_want_this_food = auto()
@@ -35,10 +91,10 @@ class Game():
 #     Im_the_only_one_who_wants_food = auto()
 
 class Person:
-    def __init__(self):
+    def __init__(self, index = -1):
         # f = lambda xs :random.choice(list(xs))
-
-        self.rule = None
+        self.index = index
+        self.rules = []
         self.drink = list(Drink)
         self.dish = list(Dish)
         self.dessert = list(Dessert)
@@ -53,25 +109,59 @@ class Person:
             if len(self.dessert) == 1 else "undefined"
         return f"{drink}, {dish}, {dessert}"
     
-    # remove dislike foods
-    def dislike(self, foodList):
+    def get_like(self):
+        return [self.drink, self.dish, self.dessert]
+    
+    def set_like(self, foodList):
+        print("test")
         for food in foodList:
-            if self.drink in food:
+            if food in self.drink:
+                self.drink.clear()
+                self.drink.append(food)
+            if food in self.dish:
+                self.dish.clear()
+                self.dish.append(food)
+            if food in self.dessert:
+                self.dessert.clear()
+                self.dessert.append(food)
+
+    # remove dislike foods
+    def set_dislike(self, foodList):
+        for food in foodList:
+            if food in self.drink:
                 self.drink.remove(food)
-            if self.dish in food:
+            if food in self.dish:
                 self.dish.remove(food)
-            if self.dessert in food:
+            if food in self.dessert:
                 self.dessert.remove(food)
+
+    def add_rule(self, rule):
+        self.rules.append(rule)
+    
+    def run_rule(self):
+        for rule in self.rules:
+            rule.set_menu_list()
             
+
+class Game():
+    def __init__(self):
+        self.count = 6
+        self.people = [Person(i) for i in range(self.count)]
+
+        for person in self.people:
+            person.add_rule(Rule(self, Target(self, person.index)))
+        
+        for person in self.people:
+            person.run_rule()
+        
+        for person in self.people:
+            print(repr(person))
+
+Game()
 
 # print(repr(Person()))
 
-# 디코 봐주세요
 
-# 네 잘 되네요 일단
-
-# 근데 보니까 규칙을 먼저 만든 다음에 그에 맞춰 메뉴를 정하는 편이 쉬워보이네요
-# 많이 어렵겠는데요 ㅋㅋㅋㅋㅋㅋㅋㅋㅋ 감도 안잡히네 
 
 # 정답이 하나만 나오게 해야하니까 흠 
 # 규칙은 인당 하나씩 말하는거 맞죠?

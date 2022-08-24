@@ -69,10 +69,10 @@ n..m : number range
 
 # 규칙들에서 찾아볼 수 있는 공통된 규칙들 목록
 
-1. I want ()
-2. I don't want ()
+1. I want ()  # set
+2. I don't want ()  # set
 <!-- I'm the only one who wants a () = 1, 3 -->
-3. Everybody else wants ()
+3. Everybody else wants ()  # set
 4. 1..2 of my neighbors want ()
 5. Everybody over left wants ()
 
@@ -116,17 +116,22 @@ n..m : number range
 - I
 - Everybody
 - Everybody else
-- Neighbors
+- Neighbors 
 - Everybody over left
 - Everybody over right
 - The two person sitting at each edge of the table
 
-- All the ones who want ()
+1-1. target condition
+
+
+<!-- - All the ones who want () -->
 
 2. setting spetific
 
     1. every
     - want ()
     - don't want ()
-    
+    - wants the same []
+    - don't wants the same []
+
     2. 
