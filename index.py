@@ -54,6 +54,96 @@ def get_rule_name(rule_type):
     name_list = ["like", "hate"]
     return name_list[rule_type]
 
+
+def set_target_rule_menu(game, index, target_type, rule_type):
+
+    candidates = [list(Drink), list(Dish), list(Dessert)]
+    menu = None
+    targets = get_target(target_type, index, game.count)
+
+    match rule_type:
+        case 0: #like
+            all_like_menus = []
+            for target in targets:
+                likes = game.people[target].get_like()
+                dislikes = game.people[target].get_dislike()
+
+                for i in range(3):
+                    like = likes[i]
+                    dislike = dislikes[i]
+                    candidate = candidates[i]
+
+                    # 후보군 중 하나라도 싫어하는 메뉴들은 제거
+                    for d in dislike:
+                        if d in candidate:
+                            candidate.remove(d)
+
+                    # 후보군 중 하나라도 좋아하는 것이 정해졌을 때 좋아하는 리스트로 선정되는 것 방지
+                    if len(like) == 1 and like[0] in candidate:
+                        all_like_menus.append(like[0])
+            
+            menus = [*candidates[0], *candidates[1], *candidates[2]]
+
+            for m in menus:
+                if all_like_menus.count(m) == len(targets):
+                    menus.remove(m)
+            
+            if not menus:
+                return None
+
+            # print(targets)
+            # print(menus)
+            
+            menu = random.choice(menus)
+            # menu = random.choice(candidates[1])
+
+            for index in targets:
+                game.people[index].set_like([menu])
+
+        case 1: #hate
+            all_unlike_menus = []
+            # todo : 후보군 모두 싫어하는 메뉴는 제거
+            for target in targets:
+                likes = game.people[target].get_like()
+                dislikes = game.people[target].get_dislike()
+
+                for i in range(3):
+                    like = likes[i]
+                    dislike = dislikes[i]
+                    candidate = candidates[i]
+
+                    # 후보군 중 하나라도 좋아하는 게 정해졌을 때 그 메뉴의 모든 경우의 수 제거
+                    if len(like) == 1 and like[0] in candidate:
+                        candidate.remove(like[0])
+                        for d in dislike:
+                            if d in candidate:
+                                candidate.remove(d)
+                    
+                    if len(dislike) != 0:
+                        for d in dislike:
+                            all_unlike_menus.append(d)
+
+            menus = [*candidates[0], *candidates[1], *candidates[2]]
+
+            for m in menus:
+                if all_unlike_menus.count(m) == len(targets):
+                    menus.remove(m)
+
+            if not menus:
+                return None
+
+            # print(all_unlike_menus)
+            # print(menus)
+            
+            menu = random.choice(menus)
+            # menu = random.choice(candidates[1])
+            
+
+            for index in targets:
+                game.people[index].set_dislike([menu])
+
+    return menu
+
 def rule(game, index):
     # todo : dont have subset rule menu
     target_type_list = list(range(7))
@@ -66,18 +156,27 @@ def rule(game, index):
     if index == game.count - 1:
         target_type_list.remove(5)
     
-    target_type = random.choice(target_type_list)
-
     set_rule_list = [0, 1]
 
-    rule_type = random.choice(set_rule_list)
+    target_rule_type_list = []
 
-    # wrong test case 1
+    for target in target_type_list:
+        for rule in set_rule_list:
+            target_rule_type_list.append((target, rule))
+    
+    random.shuffle(target_rule_type_list)
+
+    for target_rule in target_rule_type_list:
+        menu = set_target_rule_menu(game, index, target_rule[0], target_rule[1])
+        if menu:
+            return (target_rule[0], target_rule[1], menu)
+
+    # wrong test case 1 - clear
     # [Dish.Salad] everybody like Salad
     # [Dish.Salad] I like Salad
     # [Dish.Salad]
 
-    # wrong test case 2 - solve
+    # wrong test case 2 - todo 
     # [Dish.Fish, Dish.Salad, Dish.Sandwich] I like Salad
     # [Dish.Fish, Dish.Salad, Dish.Sandwich] everybody like Salad
     # [Dish.Fish, Dish.Salad, Dish.Sandwich]
@@ -88,16 +187,16 @@ def rule(game, index):
     # [Dish.Fish, Dish.Salad, Dish.Sandwich]
     # [Dish.Fish, Dish.Salad, Dish.Sandwich]
 
-    # right test case 4
+    # right test case 4 - clear
     # [Dish.Salad]
     # [Dish.Fish, Dish.Salad, Dish.Sandwich] Neighbors like Salad
     # [Dish.Salad]
     # [Dish.Fish, Dish.Salad, Dish.Sandwich] Neighbors like Salad
-    # [Dish.Fish, Dish.Salad, Dish.Sandwich]
+    # [Dish.Salad
 
-    # wrong test case 5 - solve
+    # wrong test case 5 - clear
     # [Dish.Fish, Dish.Salad, Dish.Sandwich] everybody like Salad
-    # [Dish.Fish, Dish.Salad, Dish.Sandwich] I hate Fish
+    # [Dish.Fish, Dish.Salad, Dish.Sandwich] I unlike Fish
 
     # right test case 6
     # [Dish.Fish, Dish.Salad, Dish.Sandwich]
@@ -105,66 +204,9 @@ def rule(game, index):
     # [Dish.Fish, Dish.Salad, Dish.Sandwich]
     # [Dish.Fish, Dish.Salad, Dish.Sandwich] Neighbors unlike Salad
     # [Dish.Fish, Dish.Salad, Dish.Sandwich]
-    
 
-    
 
-    candidates = [list(Drink), list(Dish), list(Dessert)]
-    
-    menu = None
-
-    match rule_type:
-        case 0: #like
-            # todo : 후보군 모두 좋아하는 것이 정해졌을 때 예외처리
-            for target in get_target(target_type, index, game.count):
-                likes = game.people[target].get_like()
-                dislikes = game.people[target].get_dislike()
-
-                for i in range(3):
-                    like = likes[i]
-                    dislike = dislikes[i]
-                    candidate = candidates[i]
-
-                    # 후보군 중 하나라도 싫어하는 메뉴들은 제거
-                    if dislike in candidate:
-                        candidate.remove(dislike)
-                    # 후보군 중 하나라도 좋아하는 것이 정해졌을 때 좋아하는 리스트로 선정되는 것 방지
-                    if len(like) == 1 and like in candidate:
-                        candidate.remove(like)
-            
-            menu = random.choice(random.choice(candidates))
-            # menu = random.choice(candidates[1])
-
-            for index in get_target(target_type, index, game.count):
-                game.people[index].set_like([menu])
-                
-        case 1: #hate
-            # todo : 후보군 모두 싫어하는 메뉴는 제거
-            for target in get_target(target_type, index, game.count):
-                likes = game.people[target].get_like()
-                dislikes = game.people[target].get_dislike()
-
-                for i in range(3):
-                    like = likes[i]
-                    dislike = dislikes[i]
-                    candidate = candidates[i]
-
-                    # 후보군 중 하나라도 좋아하는 게 정해졌을 때 그 메뉴의 모든 경우의 수 제거
-                    if len(like) == 1 and like in candidate:
-                        candidate.remove(like)
-                        if dislike in candidate:
-                            candidate.remove(dislike)
-                
-            menu = random.choice(random.choice(candidates))
-            # menu = random.choice(candidates[1])
-            
-
-            for index in get_target(target_type, index, game.count):
-                game.people[index].set_dislike([menu])
-
-    
-    return (target_type, rule_type, menu)
-
+    return None
 
 class Person:
     def __init__(self, index = -1):
@@ -190,8 +232,8 @@ class Person:
     
     def get_dislike(self):
         drink = [d for d in list(Drink) if not d in self.drink]
-        dish = [d for d in list(Drink) if not d in self.dish]
-        dessert = [d for d in list(Drink) if not d in self.dessert]
+        dish = [d for d in list(Dish) if not d in self.dish]
+        dessert = [d for d in list(Dessert) if not d in self.dessert]
         return [drink, dish, dessert]
     
     def set_like(self, foodList):
@@ -220,8 +262,14 @@ class Person:
         return self.rules
 
     def add_rule(self, rule):
+        if not rule:
+            return None
         self.rules.append(rule)
+        return True
         
+    def is_set_all_like(self):
+        return all([len(like) == 1 for like in self.get_like()])
+
 
 class Game:
     def __init__(self):
@@ -242,18 +290,33 @@ class Game:
             return random.choice(candidates)
 
 
-        for _ in range(2):
+        for _ in range(6):
             person = get_min_rule_people(self.people)
             person.add_rule(rule(self, person.index))
+            # for person in self.people:
+            #     print(person)
+            # print()
 
-        # while True:
-        #     person = get_min_rule_people(self.people)
-        #     if not person.add_rule(rule(self, person.index, random.choice(set_rule_list))):
-        #         break
+        while True:
+            person = random.choice(self.people)  # get_min_rule_people(self.people)
+
+            person.add_rule(rule(self, person.index))
+
+            # print()
+            # for person in self.people:
+            #     print(person)
+
+            if all([person.is_set_all_like() for person in self.people]):
+                # todo : remove 
+                print()
+                for person in self.people:
+                    print(person)
+                break
+            # if not person.add_rule(rule(self, person.index)):
+            #     break
+            # for person in self.people:
+            #     print(person)
+            # print()
         
-        for person in self.people:
-            print(person)
 
 Game()
-
-
