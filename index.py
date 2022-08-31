@@ -1,4 +1,5 @@
 from enum import Enum, auto
+from itertools import combinations
 import random
 
 class Drink(Enum):
@@ -46,6 +47,19 @@ def get_target(target_type, target_index, size):
         case 6:   # edge
             return [0, size - 1]
 
+def get_list_combination(targets):
+    if len(targets) <= 1:
+        return [targets]
+    else:
+        l = []
+        for i in range(1, len(targets)):
+            for ex in combinations(targets, i):
+                l.append(list(ex))
+        
+        random.shuffle(l)
+
+        return l
+
 def get_target_name(target_type):
     name_list = ["I", "everybody", "everybody else", "neighbors", "left", "right", "edge"]
     return name_list[target_type]
@@ -84,25 +98,22 @@ def set_target_rule_menu(game, index, target_type, rule_type):
             
             menus = [*candidates[0], *candidates[1], *candidates[2]]
 
-            for m in menus:
-                if all_like_menus.count(m) == len(targets):
-                    menus.remove(m)
+            # print(targets)
+            # print(all_like_menus)
+            # print(menus)
+
+            menus = list(filter(lambda m:all_like_menus.count(m) < len(targets), menus))
             
             if not menus:
                 return None
-
-            # print(targets)
-            # print(menus)
             
             menu = random.choice(menus)
-            # menu = random.choice(candidates[1])
 
             for index in targets:
                 game.people[index].set_like([menu])
 
         case 1: #hate
             all_unlike_menus = []
-            # todo : 후보군 모두 싫어하는 메뉴는 제거
             for target in targets:
                 likes = game.people[target].get_like()
                 dislikes = game.people[target].get_dislike()
@@ -125,9 +136,7 @@ def set_target_rule_menu(game, index, target_type, rule_type):
 
             menus = [*candidates[0], *candidates[1], *candidates[2]]
 
-            for m in menus:
-                if all_unlike_menus.count(m) == len(targets):
-                    menus.remove(m)
+            menus = list(filter(lambda m:all_unlike_menus.count(m) < len(targets), menus))
 
             if not menus:
                 return None
@@ -135,9 +144,7 @@ def set_target_rule_menu(game, index, target_type, rule_type):
             # print(all_unlike_menus)
             # print(menus)
             
-            menu = random.choice(menus)
-            # menu = random.choice(candidates[1])
-            
+            menu = random.choice(menus)            
 
             for index in targets:
                 game.people[index].set_dislike([menu])
@@ -215,6 +222,7 @@ class Person:
         self.drink = list(Drink)
         self.dish = list(Dish)
         self.dessert = list(Dessert)
+        print(self)
     
     # log what person want and rules
     def __repr__(self):
@@ -224,8 +232,8 @@ class Person:
             if len(self.dish) == 1 else "undefined"
         dessert = self.dessert[0] \
             if len(self.dessert) == 1 else "undefined"
-        return f"{drink}, {dish}, {dessert} /\
- {[(get_target_name(rule[0]), get_rule_name(rule[1]), rule[2]) for rule in self.rules]}"
+        return f"{drink}, {dish}, {dessert} / " +\
+                ", ".join([f"{get_target_name(rule[0])} {get_rule_name(rule[1])} {str(rule[2])}" for rule in self.rules])
     
     def get_like(self):
         return [self.drink, self.dish, self.dessert]
@@ -276,47 +284,69 @@ class Game:
         self.count = 6
         self.people = [Person(i) for i in range(self.count)]
 
-        def get_min_rule_people(people):
-            candidates = []
-            diff = 0
-            for person in people:
-                if candidates:
-                    diff = len(person.get_rule()) - len(candidates[0].get_rule())
-                    if diff < 0:
-                        candidates.clear()
-                if not candidates or diff == 0:
-                    candidates.append(person)
-            
-            return random.choice(candidates)
-
-
-        for _ in range(6):
-            person = get_min_rule_people(self.people)
-            person.add_rule(rule(self, person.index))
-            # for person in self.people:
-            #     print(person)
-            # print()
-
         while True:
-            person = random.choice(self.people)  # get_min_rule_people(self.people)
-
-            person.add_rule(rule(self, person.index))
-
-            # print()
-            # for person in self.people:
-            #     print(person)
-
-            if all([person.is_set_all_like() for person in self.people]):
-                # todo : remove 
-                print()
-                for person in self.people:
-                    print(person)
+            created_rule = self.set_rule()
+            if not created_rule:
                 break
-            # if not person.add_rule(rule(self, person.index)):
-            #     break
+            
+            person = self.people[created_rule[0]]
+
+            for person in self.people:
+                print(person)
+            print()
+
+            # person = random.choice(self.people)
+
+            # person.add_rule(rule(self, person.index))
+
+            # print()
             # for person in self.people:
             #     print(person)
-            # print()
+
+            # if all([person.is_set_all_like() for person in self.people]):
+            #     # todo : remove 
+            #     print()
+            #     for person in self.people:
+            #         print(person)
+            #     break
+    
+    def set_rule(self):
+        # todo : dont have subset rule menu
+
+        target_type_list = [0, 3, 6]
+
+        set_rule_list = [0, 1]
+
+        rule_list = []
+
+        for index in range(self.count):
+            for target in target_type_list:
+                # neighbors except
+                if target == 3 and (index == 0 or index == self.count - 1):
+                    continue
+                if target == 4 and index == 0:
+                    continue
+                if target == 5 and index == self.count - 1:
+                    continue
+
+                for rule in set_rule_list:
+                    rule_list.append((index, target, rule))
+        
+        def sort_func(r):
+            return len(self.people[r[0]].get_rule()) * 2 + random.random()
+        
+        # random.shuffle(rule_list)
+
+        rule_list.sort(key=sort_func)
+
+        for rule in rule_list:
+            menu = set_target_rule_menu(self, rule[0], rule[1], rule[2])
+            if menu:
+                self.people[rule[0]].add_rule((rule[1], rule[2], menu))
+                return (rule[0], rule[1], rule[2], menu)
+    
+    def get_all_rule(self):
+        return [rule for person in self.people for rule in person.get_rule()]
         
 
-Game()
+# Game()
