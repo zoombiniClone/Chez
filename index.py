@@ -234,7 +234,7 @@ class Game:
                         self.people[index].set_dislike([menu])
                 
                 self.people[rule[0]].add_rule((rule[1], rule[2], menu, target_list))  # target, rule, menu
-                return  # index, target, rule, menu
+                return True # index, target, rule, menu
 
     def check_subset_rule(self, target_list, rule_type, menu):
         for (index, rule) in self.get_all_rule():
@@ -269,4 +269,4 @@ class Game:
 g = Game()
 
 # print(str(g))
-# print(repr(g))
+print(repr(g))
