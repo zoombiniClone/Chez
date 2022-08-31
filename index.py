@@ -61,7 +61,7 @@ def get_list_combination(targets):
         return l
 
 def get_target_name(target_type):
-    name_list = ["I", "everybody", "everybody else", "neighbors", "left", "right", "edge"]
+    name_list = ["I", "Everybody", "Everybody else", "Neighbors", "Left", "Right", "Edge"]
     return name_list[target_type]
 
 def get_rule_name(rule_type):
@@ -74,19 +74,21 @@ def set_target_rule_menu(game, index, target_type, rule_type):
     candidates = [list(Drink), list(Dish), list(Dessert)]
     menu = None
     targets = get_target(target_type, index, game.count)
+    # targets_list = []
 
-    match rule_type:
-        case 0: #like
-            all_like_menus = []
-            for target in targets:
-                likes = game.people[target].get_like()
-                dislikes = game.people[target].get_dislike()
+    people_menus = []
 
-                for i in range(3):
-                    like = likes[i]
-                    dislike = dislikes[i]
-                    candidate = candidates[i]
+    def set_menus(candidates, people_menus, targets):
+        for target in targets:
+            likes = game.people[target].get_like()
+            dislikes = game.people[target].get_dislike()
 
+            for i in range(3):
+                like = likes[i]
+                dislike = dislikes[i]
+                candidate = candidates[i]
+
+                if rule_type == 0:
                     # 후보군 중 하나라도 싫어하는 메뉴들은 제거
                     for d in dislike:
                         if d in candidate:
@@ -94,35 +96,8 @@ def set_target_rule_menu(game, index, target_type, rule_type):
 
                     # 후보군 중 하나라도 좋아하는 것이 정해졌을 때 좋아하는 리스트로 선정되는 것 방지
                     if len(like) == 1 and like[0] in candidate:
-                        all_like_menus.append(like[0])
-            
-            menus = [*candidates[0], *candidates[1], *candidates[2]]
-
-            # print(targets)
-            # print(all_like_menus)
-            # print(menus)
-
-            menus = list(filter(lambda m:all_like_menus.count(m) < len(targets), menus))
-            
-            if not menus:
-                return None
-            
-            menu = random.choice(menus)
-
-            for index in targets:
-                game.people[index].set_like([menu])
-
-        case 1: #hate
-            all_unlike_menus = []
-            for target in targets:
-                likes = game.people[target].get_like()
-                dislikes = game.people[target].get_dislike()
-
-                for i in range(3):
-                    like = likes[i]
-                    dislike = dislikes[i]
-                    candidate = candidates[i]
-
+                        people_menus.append(like[0])
+                elif rule_type == 1:
                     # 후보군 중 하나라도 좋아하는 게 정해졌을 때 그 메뉴의 모든 경우의 수 제거
                     if len(like) == 1 and like[0] in candidate:
                         candidate.remove(like[0])
@@ -130,90 +105,66 @@ def set_target_rule_menu(game, index, target_type, rule_type):
                             if d in candidate:
                                 candidate.remove(d)
                     
-                    if len(dislike) != 0:
-                        for d in dislike:
-                            all_unlike_menus.append(d)
+                    for d in dislike:
+                        people_menus.append(d)
 
-            menus = [*candidates[0], *candidates[1], *candidates[2]]
-
-            menus = list(filter(lambda m:all_unlike_menus.count(m) < len(targets), menus))
-
-            if not menus:
-                return None
-
-            # print(all_unlike_menus)
-            # print(menus)
-            
-            menu = random.choice(menus)            
-
-            for index in targets:
-                game.people[index].set_dislike([menu])
-
-    return menu
-
-def rule(game, index):
-    # todo : dont have subset rule menu
-    target_type_list = list(range(7))
-
-    # neighbors except
-    if index == 0 or index == game.count - 1:
-        target_type_list.remove(3)
-    if index == 0:
-        target_type_list.remove(4)
-    if index == game.count - 1:
-        target_type_list.remove(5)
+    # if len(targets) >= 3 or \
+    #     len(targets) == 2 and random.random() > 0.5:
+    #     targets_list = get_list_combination(targets)
     
-    set_rule_list = [0, 1]
+    # for targets in targets_list:
+    set_menus(candidates, people_menus, targets)
 
-    target_rule_type_list = []
-
-    for target in target_type_list:
-        for rule in set_rule_list:
-            target_rule_type_list.append((target, rule))
+    menus = [*candidates[0], *candidates[1], *candidates[2]]
+    menus = list(filter(lambda m:people_menus.count(m) < len(targets), menus))
     
-    random.shuffle(target_rule_type_list)
+    if not menus:
+        return (None, None)
+        # continue
+    
+    menu = random.choice(menus)
 
-    for target_rule in target_rule_type_list:
-        menu = set_target_rule_menu(game, index, target_rule[0], target_rule[1])
-        if menu:
-            return (target_rule[0], target_rule[1], menu)
+    print(targets)
+    print(menus)
+    
+    return (menu, targets)
 
-    # wrong test case 1 - clear
-    # [Dish.Salad] everybody like Salad
-    # [Dish.Salad] I like Salad
-    # [Dish.Salad]
+    # return (None, None)
 
-    # wrong test case 2 - todo 
-    # [Dish.Fish, Dish.Salad, Dish.Sandwich] I like Salad
-    # [Dish.Fish, Dish.Salad, Dish.Sandwich] everybody like Salad
-    # [Dish.Fish, Dish.Salad, Dish.Sandwich]
+# wrong test case 1 - clear
+# [Dish.Salad] everybody like Salad
+# [Dish.Salad] I like Salad
+# [Dish.Salad]
 
-    # wrong test case 3
-    # [Dish.Fish, Dish.Salad, Dish.Sandwich] everybody unlike Salad
-    # [Dish.Fish, Dish.Salad, Dish.Sandwich] I unlike Salad
-    # [Dish.Fish, Dish.Salad, Dish.Sandwich]
-    # [Dish.Fish, Dish.Salad, Dish.Sandwich]
+# wrong test case 2 - todo 
+# [Dish.Fish, Dish.Salad, Dish.Sandwich] I like Salad
+# [Dish.Fish, Dish.Salad, Dish.Sandwich] everybody like Salad
+# [Dish.Fish, Dish.Salad, Dish.Sandwich]
 
-    # right test case 4 - clear
-    # [Dish.Salad]
-    # [Dish.Fish, Dish.Salad, Dish.Sandwich] Neighbors like Salad
-    # [Dish.Salad]
-    # [Dish.Fish, Dish.Salad, Dish.Sandwich] Neighbors like Salad
-    # [Dish.Salad
+# wrong test case 3
+# [Dish.Fish, Dish.Salad, Dish.Sandwich] everybody unlike Salad
+# [Dish.Fish, Dish.Salad, Dish.Sandwich] I unlike Salad
+# [Dish.Fish, Dish.Salad, Dish.Sandwich]
+# [Dish.Fish, Dish.Salad, Dish.Sandwich]
 
-    # wrong test case 5 - clear
-    # [Dish.Fish, Dish.Salad, Dish.Sandwich] everybody like Salad
-    # [Dish.Fish, Dish.Salad, Dish.Sandwich] I unlike Fish
+# right test case 4 - clear
+# [Dish.Salad]
+# [Dish.Fish, Dish.Salad, Dish.Sandwich] Neighbors like Salad
+# [Dish.Salad]
+# [Dish.Fish, Dish.Salad, Dish.Sandwich] Neighbors like Salad
+# [Dish.Salad]
 
-    # right test case 6
-    # [Dish.Fish, Dish.Salad, Dish.Sandwich]
-    # [Dish.Fish, Dish.Salad, Dish.Sandwich] Neighbors unlike Salad
-    # [Dish.Fish, Dish.Salad, Dish.Sandwich]
-    # [Dish.Fish, Dish.Salad, Dish.Sandwich] Neighbors unlike Salad
-    # [Dish.Fish, Dish.Salad, Dish.Sandwich]
+# wrong test case 5 - clear
+# [Dish.Fish, Dish.Salad, Dish.Sandwich] everybody like Salad
+# [Dish.Fish, Dish.Salad, Dish.Sandwich] I unlike Fish
 
+# right test case 6
+# [Dish.Fish, Dish.Salad, Dish.Sandwich]
+# [Dish.Fish, Dish.Salad, Dish.Sandwich] Neighbors unlike Salad
+# [Dish.Fish, Dish.Salad, Dish.Sandwich]
+# [Dish.Fish, Dish.Salad, Dish.Sandwich] Neighbors unlike Salad
+# [Dish.Fish, Dish.Salad, Dish.Sandwich]
 
-    return None
 
 class Person:
     def __init__(self, index = -1):
@@ -222,10 +173,9 @@ class Person:
         self.drink = list(Drink)
         self.dish = list(Dish)
         self.dessert = list(Dessert)
-        print(self)
     
     # log what person want and rules
-    def __repr__(self):
+    def __str__(self):
         drink = self.drink[0] \
             if len(self.drink) == 1 else "undefined"
         dish = self.dish[0] \
@@ -233,8 +183,11 @@ class Person:
         dessert = self.dessert[0] \
             if len(self.dessert) == 1 else "undefined"
         return f"{drink}, {dish}, {dessert} / " +\
-                ", ".join([f"{get_target_name(rule[0])} {get_rule_name(rule[1])} {str(rule[2])}" for rule in self.rules])
+                ", ".join([f"{get_target_name(rule[0])} {get_rule_name(rule[1])} {str(rule[2])} {str(rule[3])}" for rule in self.rules])
     
+    def __repr__(self):
+        return ", ".join([f"{get_target_name(rule[0])} {get_rule_name(rule[1])} {str(rule[2])}" for rule in self.rules])
+
     def get_like(self):
         return [self.drink, self.dish, self.dessert]
     
@@ -270,10 +223,7 @@ class Person:
         return self.rules
 
     def add_rule(self, rule):
-        if not rule:
-            return None
         self.rules.append(rule)
-        return True
         
     def is_set_all_like(self):
         return all([len(like) == 1 for like in self.get_like()])
@@ -284,38 +234,30 @@ class Game:
         self.count = 6
         self.people = [Person(i) for i in range(self.count)]
 
-        while True:
-            created_rule = self.set_rule()
-            if not created_rule:
-                break
-            
-            person = self.people[created_rule[0]]
-
+        while self.set_rule():
             for person in self.people:
-                print(person)
+                print(str(person))
             print()
-
-            # person = random.choice(self.people)
-
-            # person.add_rule(rule(self, person.index))
-
-            # print()
-            # for person in self.people:
-            #     print(person)
-
-            # if all([person.is_set_all_like() for person in self.people]):
-            #     # todo : remove 
-            #     print()
-            #     for person in self.people:
-            #         print(person)
-            #     break
     
+    def __str__(self):
+        return_str = []
+        for person in self.people:
+            return_str.append(f"{str(person.index + 1)} : {str(person)}.\n")
+
+        return "".join(return_str)
+
+    def __repr__(self):
+        return_str = []
+        for person in self.people:
+            return_str.append(f"{str(person.index + 1)} : {repr(person)}.\n")
+
+        return "".join(return_str)
+
+
     def set_rule(self):
-        # todo : dont have subset rule menu
+        target_type_list = [0, 1, 2, 3, 4, 5, 6]
 
-        target_type_list = [0, 3, 6]
-
-        set_rule_list = [0, 1]
+        set_rule_list = [0]
 
         rule_list = []
 
@@ -335,18 +277,45 @@ class Game:
         def sort_func(r):
             return len(self.people[r[0]].get_rule()) * 2 + random.random()
         
-        # random.shuffle(rule_list)
-
         rule_list.sort(key=sort_func)
 
         for rule in rule_list:
-            menu = set_target_rule_menu(self, rule[0], rule[1], rule[2])
+            menu, target_list = set_target_rule_menu(self, rule[0], rule[1], rule[2])
             if menu:
-                self.people[rule[0]].add_rule((rule[1], rule[2], menu))
-                return (rule[0], rule[1], rule[2], menu)
+                if self.check_subset_rule(target_list, rule[2], menu):
+                    continue
+
+                if rule[1] == 0:
+                    for index in target_list:
+                        self.people[index].set_like([menu])
+                elif rule[1] == 1:
+                    for index in target_list:
+                        self.people[index].set_dislike([menu])
+                
+                self.people[rule[0]].add_rule((rule[1], rule[2], menu, target_list))  # target, rule, menu
+                return (rule[0], rule[1], rule[2], menu, target_list)  # index, target, rule, menu
+
+    def check_subset_rule(self, target_list, rule_type, menu):
+        for (index, rule) in self.get_all_rule():
+            if not (rule[1] == rule_type and rule[2] == menu):
+                continue
+
+            is_subset = True
+            for sub_target in get_target(rule[0], index, self.count):
+                if not sub_target in target_list:
+                    is_subset = False
+                    break
+            
+            if is_subset:
+                return True
+                
+        return False
     
     def get_all_rule(self):
-        return [rule for person in self.people for rule in person.get_rule()]
+        return [(person.index, rule) for person in self.people for rule in person.get_rule()]
         
 
-# Game()
+g = Game()
+
+# print(str(g))
+# print(repr(g))
