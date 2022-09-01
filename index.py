@@ -264,9 +264,78 @@ class Game:
     
     def get_all_rule(self):
         return [(person.index, rule) for person in self.people for rule in person.get_rule()]
+
+    def play(self):
+        score_board = [-1 for _ in range(self.count)]
+
+        while True:
+            print("[0]Print Hint [1]Print Answer [2]Solution [3]Status [4]Exit")
+            num = int(input())
+
+            match num:
+                case 0:
+                    print("[0] : Print Hint")
+                    print(repr(g))
+                case 1:
+                    print("[1] : Print Answer")
+                    print(str(g))
+                case 2:
+                    print("[2] Solution \nSol = [index, Drink, Dish, Dessert] : ")
+                    print(Drink, Dish, Dessert)
+                    ans = []
+                    # ans = int(input())
+                    ans = list(map(int, input().split()))
+                    if len(ans) != 4:
+                        print("Wrong input parameter numbers.. ", len(ans),  "Correct form is [index, Drink, Dish, Dessert]")
+                        continue
+                    else:
+                        if self.check_ans(ans):
+                            score_board[ans[0]] = ans[0]
+
+                case 3:
+                    print("[3] : Status")
+                    print(self.get_score(score_board))
+
+                case 4:
+                    print("[4] : Exit")
+                    break
+
+
+    def check_ans(self, ans):
+        index = ans[0]
+        drink = ans[1]
+        dish = ans[2]
+        dessert = ans[3]
+
+        sol = []
+        for i in range(3):
+            sol.append(self.people[index].get_like()[i][0])
         
+        if sol == [Drink(drink), Dish(dish), Dessert(dessert)]:
+            print("Correct. Update Completed.")
+            return True
+
+        else:
+            print("Wrong Answer.")
+            return False
+        
+    def get_score(self, score_board):
+        return_str = []
+        for idx, val in enumerate(score_board):
+            person = self.people[idx]
+            if val < 0:
+                return_str.append(f"{str(person.index + 1)} : Drink.???, Dish.???, Dessert.???.\n")
+            else:
+                return_str.append(f"{str(person.index + 1)} : {str(person)}.\n")
+
+        return "".join(return_str)
+
+
 
 g = Game()
 
 # print(str(g))
 print(repr(g))
+
+
+g.play()
